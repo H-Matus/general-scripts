@@ -1,0 +1,27 @@
+#!/bin/sh
+intern=eDP1
+extern=('DP1' 'DP2' 'DP3' 'HDMI1' 'HDMI2' 'VIRTUAL1')
+
+total_num_of_monitors=${#extern[@]}
+external_not_detected=0
+
+for ((counter = 0 ; counter < total_num_of_monitors ; counter++)); do
+	connection=$(xrandr | grep "${extern[$counter]} connected")
+	if [ -z "$connection" ]; then
+		external_not_detected=1
+		echo "${extern[$counter]} is not connected"
+		xrandr --output "${extern[$counter]}" --off
+	else
+		if [ "${connection%% *}" == "$intern" ]; then
+			echo "Detected laptop screen."
+			continue
+		fi
+		xrandr --output "${extern[$counter]}" --primary --auto --output "$intern" --left-of "${extern[$counter]}" --auto
+		external_not_detected=0
+		break
+	fi
+done
+
+if (($external_not_detected == 1)); then
+    xrandr --output "$intern" --primary --auto
+fi
